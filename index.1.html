@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa da Alemanha</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map {
+      height: 600px;
+    }
+    .province-label {
+      background: white;
+      border-radius: 3px;
+      padding: 2px;
+      font-size: 12px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // Inicializa o mapa
+    var map = L.map('map').setView([51.1657, 10.4515], 6);
+
+    // Adiciona a camada de mapeamento
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: 'Map data © <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+      maxZoom: 18,
+    }).addTo(map);
+
+    // Função para destacar as fronteiras ao passar o mouse
+    function highlightFeature(e) {
+      var layer = e.target;
+      layer.setStyle({
+        weight: 5,
+        color: '#666',
+        dashArray: '',
+        fillOpacity: 0.7
+      });
+      if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+        layer.bringToFront();
+      }
+    }
+
+    // Função para redefinir o estilo das fronteiras ao retirar o mouse
+    function resetHighlight(e) {
+      geojson.resetStyle(e.target);
+    }
+
+    // Função para exibir informações adicionais ao clicar na fronteira
+    function onClickFeature(e) {
+      var provinceName = e.target.feature.properties.name;
+      console.log('Clicked province:', provinceName); // Verificação no console
+      var message = getMessageForProvince(provinceName);
+      var popupContent = `<strong>${provinceName}</strong><br>${message}`;
+      e.target.bindPopup(popupContent).openPopup();
+    }
+
+    // Função para adicionar eventos a cada feature (província)
+    function onEachFeature(feature, layer) {
+      layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetHighlight,
+        click: onClickFeature
+      });
+      var provinceName = feature.properties.name;
+      console.log('Province Name:', provinceName); // Verificação no console
+      var bounds = layer.getBounds();
+      var center = bounds.getCenter();
+      L.marker(center, {
+        icon: L.divIcon({
+          className: 'province-label',
+          html: provinceName
+        })
+      }).addTo(map);
+    }
+
+    // Carrega o GeoJSON das fronteiras administrativas da Alemanha
+    var geojson;
+    fetch('https://raw.githubusercontent.com/m-ad/geofeatures-ags-germany/master/geojson/states.json')
+      .then(response => response.json())
+      .then(data => {
+        // Imprime a estrutura do GeoJSON no console para verificar
+        console.log('GeoJSON Data:', data);
+        geojson = L.geoJSON(data, {
+          style: {
+            color: 'blue',
+            weight: 2,
+            fillOpacity: 0.1
+          },
+          onEachFeature: onEachFeature
+        }).addTo(map);
+      })
+      .catch(error => console.error('Error loading GeoJSON:', error));
+
+    // Carrega o segundo GeoJSON e adiciona ao mapa
+    fetch('https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/1_deutschland/1_sehr_hoch.geo.json')
+      .then(response => response.json())
+      .then(data => {
+        L.geoJSON(data, {
+          style: {
+            color: 'red',
+            weight: 2,
+            fillOpacity: 0.1
+          },
+          onEachFeature: onEachFeature
+        }).addTo(map);
+      })
+      .catch(error => console.error('Error loading second GeoJSON:', error));
+
+    // Adiciona controle de zoom
+    L.control.zoom({
+      position: 'topright'
+    }).addTo(map);
+
+    // Função para retornar uma mensagem fictícia para cada estado
+    function getMessageForProvince(provinceName) {
+      switch (provinceName) {
+        case 'Baden-Württemberg':
+          return "Baden-Württemberg é conhecido por sua rica história cultural e belas paisagens, incluindo a Floresta Negra.";
+        case 'Bayern':
+          return "Bayern, ou Baviera em português, é famoso por suas tradições, cervejarias e a beleza dos Alpes Bávaros.";
+        case 'Berlin':
+          return "Berlim é a capital da Alemanha e uma das cidades mais vibrantes da Europa, conhecida por sua história, arte e cultura.";
+        case 'Brandenburg':
+          return "Brandenburg é marcado por suas paisagens naturais, incluindo lagos e parques nacionais, e por sua proximidade com Berlim.";
+        case 'Bremen':
+          return "Bremen é uma cidade-estado no norte da Alemanha, com um charme histórico e uma rica tradição marítima.";
+        case 'Hamburg':
+          return "Hamburgo é uma cidade portuária cosmopolita, conhecida por sua cena cultural, vida noturna e arquitetura única.";
+        case 'Hessen':
+          return "Hessen é uma região rica em história, com cidades medievais encantadoras e uma paisagem diversificada.";
+        case 'Mecklenburg-Vorpommern':
+          return "Mecklenburg-Vorpommern é famoso por suas praias deslumbrantes ao longo do Mar Báltico e sua paisagem tranquila.";
+        case 'Niedersachsen':
+          return "Niedersachsen é o lar de vastas áreas naturais, incluindo o Parque Nacional Harz e o Mar do Norte.";
+        case 'Nordrhein-Westfalen':
+          return "Nordrhein-Westfalen é uma região industrializada com cidades dinâmicas, como Colônia, Düsseldorf e Dortmund.";
+        case 'Rheinland-Pfalz':
+          return "Rheinland-Pfalz é conhecido por seus vinhedos pitorescos, castelos medievais e vilarejos encantadores.";
+        case 'Saarland':
+          return "Saarland é uma pequena região com uma mistura de influências culturais francesas e alemãs, conhecida por sua culinária única.";
+        case 'Sachsen':
+          return "Sachsen é uma região com uma rica herança cultural, incluindo a cidade de Dresden, conhecida por sua arquitetura barroca.";
+        case 'Sachsen-Anhalt':
+          return "Sachsen-Anhalt é uma terra de história e cultura, com cidades medievais e atrações como o Parque Nacional Harz.";
+        case 'Schleswig-Holstein':
+          return "Schleswig-Holstein é conhecido por suas extensas praias ao longo do Mar do Norte e pelo Mar Báltico, além de sua herança viking.";
+        case 'Thüringen':
+          return "Thüringen é conhecido por sua paisagem montanhosa, cidades medievais encantadoras e por ser o berço de grandes figuras históricas.";
+        default:
+          return "Não há informações disponíveis para este estado.";
+      }
+    }
+  </script>
+</body>
+</html>
+
